@@ -84,7 +84,7 @@ _sy: .res 1
 ; routines
 ;
 
-.segment "CODE"
+.segment "MAIN"
 
 .import benched_routine
 
