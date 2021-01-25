@@ -1,8 +1,9 @@
 #include <stdint.h>
 
 static uint8_t* const unzip_buffer = (uint8_t* const)0x0580;
+extern uint8_t zipped_data;
 
-void get_unzipped_bytes(uint8_t const* zipped, uint16_t offset, uint8_t count) {
+static void get_unzipped_bytes(uint8_t const* zipped, uint16_t offset, uint8_t count) {
 	uint8_t zero_count = 0;
 
 	// Skip uncompressed bytes until reaching offset
@@ -39,4 +40,8 @@ void get_unzipped_bytes(uint8_t const* zipped, uint16_t offset, uint8_t count) {
 			}
 		}
 	}
+}
+
+void benched_routine() {
+	get_unzipped_bytes(&zipped_data, 0x3a8, 16);
 }
