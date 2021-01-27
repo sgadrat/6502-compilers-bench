@@ -1,6 +1,12 @@
 
 #include "mos6502.h"
 
+namespace {
+uint8_t msb(uint16_t val) {
+	return (val & 0xff00) >> 8;
+}
+}
+
 void mos6502::initBus(BusRead r, BusWrite w) {
 	Write = (BusWrite)w;
 	Read = (BusRead)r;
@@ -102,7 +108,7 @@ mos6502::mos6502()
 	instr.code = &mos6502::Op_ASL;
 	instr.cycles = 6;
 	InstrTable[0x16] = instr;
-	instr.addr = &mos6502::Addr_ABX;
+	instr.addr = &mos6502::Addr_ABX_write;
 	instr.code = &mos6502::Op_ASL;
 	instr.cycles = 7;
 	InstrTable[0x1E] = instr;
@@ -252,7 +258,7 @@ mos6502::mos6502()
 	instr.code = &mos6502::Op_DEC;
 	instr.cycles = 6;
 	InstrTable[0xD6] = instr;
-	instr.addr = &mos6502::Addr_ABX;
+	instr.addr = &mos6502::Addr_ABX_write;
 	instr.code = &mos6502::Op_DEC;
 	instr.cycles = 7;
 	InstrTable[0xDE] = instr;
@@ -312,7 +318,7 @@ mos6502::mos6502()
 	instr.code = &mos6502::Op_INC;
 	instr.cycles = 6;
 	InstrTable[0xF6] = instr;
-	instr.addr = &mos6502::Addr_ABX;
+	instr.addr = &mos6502::Addr_ABX_write;
 	instr.code = &mos6502::Op_INC;
 	instr.cycles = 7;
 	InstrTable[0xFE] = instr;
@@ -432,7 +438,7 @@ mos6502::mos6502()
 	instr.code = &mos6502::Op_LSR;
 	instr.cycles = 6;
 	InstrTable[0x56] = instr;
-	instr.addr = &mos6502::Addr_ABX;
+	instr.addr = &mos6502::Addr_ABX_write;
 	instr.code = &mos6502::Op_LSR;
 	instr.cycles = 7;
 	InstrTable[0x5E] = instr;
@@ -511,7 +517,7 @@ mos6502::mos6502()
 	instr.code = &mos6502::Op_ROL;
 	instr.cycles = 6;
 	InstrTable[0x36] = instr;
-	instr.addr = &mos6502::Addr_ABX;
+	instr.addr = &mos6502::Addr_ABX_write;
 	instr.code = &mos6502::Op_ROL;
 	instr.cycles = 7;
 	InstrTable[0x3E] = instr;
@@ -532,7 +538,7 @@ mos6502::mos6502()
 	instr.code = &mos6502::Op_ROR;
 	instr.cycles = 6;
 	InstrTable[0x76] = instr;
-	instr.addr = &mos6502::Addr_ABX;
+	instr.addr = &mos6502::Addr_ABX_write;
 	instr.code = &mos6502::Op_ROR;
 	instr.cycles = 7;
 	InstrTable[0x7E] = instr;
@@ -607,7 +613,7 @@ mos6502::mos6502()
 	instr.code = &mos6502::Op_STA;
 	instr.cycles = 6;
 	InstrTable[0x81] = instr;
-	instr.addr = &mos6502::Addr_INY;
+	instr.addr = &mos6502::Addr_INY_write;
 	instr.code = &mos6502::Op_STA;
 	instr.cycles = 6;
 	InstrTable[0x91] = instr;
@@ -615,11 +621,11 @@ mos6502::mos6502()
 	instr.code = &mos6502::Op_STA;
 	instr.cycles = 4;
 	InstrTable[0x95] = instr;
-	instr.addr = &mos6502::Addr_ABX;
+	instr.addr = &mos6502::Addr_ABX_write;
 	instr.code = &mos6502::Op_STA;
 	instr.cycles = 5;
 	InstrTable[0x9D] = instr;
-	instr.addr = &mos6502::Addr_ABY;
+	instr.addr = &mos6502::Addr_ABY_write;
 	instr.code = &mos6502::Op_STA;
 	instr.cycles = 5;
 	InstrTable[0x99] = instr;
@@ -767,6 +773,19 @@ uint16_t mos6502::Addr_ZEY()
 	return addr;
 }
 
+uint16_t mos6502::Addr_ABX_write()
+{
+	uint16_t addr;
+	uint16_t addrL;
+	uint16_t addrH;
+
+	addrL = Read(pc++);
+	addrH = Read(pc++);
+
+	addr = addrL + (addrH << 8) + X;
+	return addr;
+}
+
 uint16_t mos6502::Addr_ABX()
 {
 	uint16_t addr;
@@ -777,6 +796,24 @@ uint16_t mos6502::Addr_ABX()
 	addrH = Read(pc++);
 
 	addr = addrL + (addrH << 8) + X;
+
+	if (msb(addr) != msb(addrL + (addrH << 8))) {
+		cycleCount += 1;
+	}
+
+	return addr;
+}
+
+uint16_t mos6502::Addr_ABY_write()
+{
+	uint16_t addr;
+	uint16_t addrL;
+	uint16_t addrH;
+
+	addrL = Read(pc++);
+	addrH = Read(pc++);
+
+	addr = addrL + (addrH << 8) + Y;
 	return addr;
 }
 
@@ -790,6 +827,11 @@ uint16_t mos6502::Addr_ABY()
 	addrH = Read(pc++);
 
 	addr = addrL + (addrH << 8) + Y;
+
+	if (msb(addr) != msb(addrL + (addrH << 8))) {
+		cycleCount += 1;
+	}
+
 	return addr;
 }
 
@@ -807,6 +849,19 @@ uint16_t mos6502::Addr_INX()
 	return addr;
 }
 
+uint16_t mos6502::Addr_INY_write()
+{
+	uint16_t zeroL;
+	uint16_t zeroH;
+	uint16_t addr;
+
+	zeroL = Read(pc++);
+	zeroH = (zeroL + 1) % 256;
+	addr = Read(zeroL) + (Read(zeroH) << 8) + Y;
+
+	return addr;
+}
+
 uint16_t mos6502::Addr_INY()
 {
 	uint16_t zeroL;
@@ -816,6 +871,10 @@ uint16_t mos6502::Addr_INY()
 	zeroL = Read(pc++);
 	zeroH = (zeroL + 1) % 256;
 	addr = Read(zeroL) + (Read(zeroH) << 8) + Y;
+
+	if (zeroH != 0) {
+		cycleCount += 1;
+	}
 
 	return addr;
 }
@@ -878,11 +937,12 @@ void mos6502::NMI()
 
 void mos6502::Run(
 	int32_t cyclesRemaining,
-	uint64_t& cycleCount,
 	CycleMethod cycleMethod
 ) {
 	uint8_t opcode;
 	Instr instr;
+
+	cycleCount = 0;
 
 	while(cyclesRemaining > 0 && !illegalOpcode)
 	{
@@ -981,6 +1041,10 @@ void mos6502::Op_BCC(uint16_t src)
 {
 	if (!IF_CARRY())
 	{
+		cycleCount += 1;
+		if (msb(pc) != msb(src)) {
+			cycleCount += 1;
+		}
 		pc = src;
 	}
 	return;
@@ -991,6 +1055,10 @@ void mos6502::Op_BCS(uint16_t src)
 {
 	if (IF_CARRY())
 	{
+		cycleCount += 1;
+		if (msb(pc) != msb(src)) {
+			cycleCount += 1;
+		}
 		pc = src;
 	}
 	return;
@@ -1000,6 +1068,10 @@ void mos6502::Op_BEQ(uint16_t src)
 {
 	if (IF_ZERO())
 	{
+		cycleCount += 1;
+		if (msb(pc) != msb(src)) {
+			cycleCount += 1;
+		}
 		pc = src;
 	}
 	return;
@@ -1019,6 +1091,10 @@ void mos6502::Op_BMI(uint16_t src)
 {
 	if (IF_NEGATIVE())
 	{
+		cycleCount += 1;
+		if (msb(pc) != msb(src)) {
+			cycleCount += 1;
+		}
 		pc = src;
 	}
 	return;
@@ -1028,6 +1104,10 @@ void mos6502::Op_BNE(uint16_t src)
 {
 	if (!IF_ZERO())
 	{
+		cycleCount += 1;
+		if (msb(pc) != msb(src)) {
+			cycleCount += 1;
+		}
 		pc = src;
 	}
 	return;
@@ -1037,6 +1117,10 @@ void mos6502::Op_BPL(uint16_t src)
 {
 	if (!IF_NEGATIVE())
 	{
+		cycleCount += 1;
+		if (msb(pc) != msb(src)) {
+			cycleCount += 1;
+		}
 		pc = src;
 	}
 	return;
@@ -1057,6 +1141,10 @@ void mos6502::Op_BVC(uint16_t src)
 {
 	if (!IF_OVERFLOW())
 	{
+		cycleCount += 1;
+		if (msb(pc) != msb(src)) {
+			cycleCount += 1;
+		}
 		pc = src;
 	}
 	return;
@@ -1066,6 +1154,10 @@ void mos6502::Op_BVS(uint16_t src)
 {
 	if (IF_OVERFLOW())
 	{
+		cycleCount += 1;
+		if (msb(pc) != msb(src)) {
+			cycleCount += 1;
+		}
 		pc = src;
 	}
 	return;

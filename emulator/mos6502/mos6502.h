@@ -82,10 +82,13 @@ private:
 	uint16_t Addr_ZEY(); // INDEXED-Y ZERO PAGE
 	uint16_t Addr_ABX(); // INDEXED-X ABSOLUTE
 	uint16_t Addr_ABY(); // INDEXED-Y ABSOLUTE
+	uint16_t Addr_ABX_write(); // INDEXED-X ABSOLUTE (without page cross penalty)
+	uint16_t Addr_ABY_write(); // INDEXED-Y ABSOLUTE (without page cross penalty)
 	uint16_t Addr_IMP(); // IMPLIED
 	uint16_t Addr_REL(); // RELATIVE
 	uint16_t Addr_INX(); // INDEXED-X INDIRECT
 	uint16_t Addr_INY(); // INDEXED-Y INDIRECT
+	uint16_t Addr_INY_write(); // INDEXED-Y INDIRECT (without page cross penalty)
 	uint16_t Addr_ABI(); // ABSOLUTE INDIRECT
 
 	// opcodes (grouped as per datasheet)
@@ -177,6 +180,8 @@ private:
 	inline uint8_t StackPop();
 
 public:
+	uint64_t cycleCount;
+
 	enum CycleMethod {
 		INST_COUNT,
 		CYCLE_COUNT,
@@ -188,6 +193,5 @@ public:
 	void Reset();
 	void Run(
 		int32_t cycles,
-		uint64_t& cycleCount,
 		CycleMethod cycleMethod = CYCLE_COUNT);
 };

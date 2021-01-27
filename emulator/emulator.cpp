@@ -62,15 +62,14 @@ int main(int argc, char** argv) {
 	);
 
 	emulator.Reset();
-	uint64_t cycles_count = 0;
 	try {
-		emulator.Run(10'000'000, cycles_count, mos6502::CYCLE_COUNT);
+		emulator.Run(10'000'000);
 	}catch (std::runtime_error const& e) {
 		std::cout << "stopped by " << e.what() << '\n';
 	}
 
 	// Print result
-	std::cout << "cycles consumed: " << cycles_count << '\n';
+	std::cout << "cycles consumed: " << emulator.cycleCount << '\n';
 	std::cout << "RAM {\n\t";
 	for (size_t i = 0; i < ram.size(); ++i) {
 		if (i % 0x10 == 0 && i != 0) {
