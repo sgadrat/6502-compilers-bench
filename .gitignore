@@ -2,3 +2,4 @@
 *.o
 *.dbg
 *_built.s
+emulator/emulator
