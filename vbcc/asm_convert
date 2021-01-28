@@ -1,0 +1,76 @@
+#!/usr/bin/env python3
+import argparse
+import sys
+import re
+
+# Parse command line
+parser = argparse.ArgumentParser(description='convert a vbcc asm to to a ca6502 compatilble one')
+parser.add_argument('source', type=str, help='file to convert')
+parser.add_argument('--output', '-o', type=str, default='', help='destination (default: overwrite source file)')
+args = parser.parse_args()
+
+source_path = args.source
+dest_path = args.output if args.output != '' else source_path
+
+# Read source, and convert on the fly what can be, gather stats for the rest
+converted = ''
+local_labels = []
+globals_declarations = []
+with open(source_path, 'r') as source:
+	for line in source:
+		line = line.rstrip('\r\n')
+		processed = False
+
+		if not processed:
+			m = re.match('^\tsection\ttext$', line)
+			if m is not None:
+				processed = True
+				converted += '\t.segment "CODE"\n'
+
+		if not processed:
+			m = re.match('^\tsection\trodata$', line)
+			if m is not None:
+				processed = True
+				converted += '\t.segment "RODATA"\n'
+
+		if not processed:
+			m = re.match('^\tword\t(?P<val>[0-9]+)$', line)
+			if m is not None:
+				processed = True
+				converted += '\t.word {}\n'.format(m.group('val'))
+
+		if not processed:
+			m = re.match('^\tzpage\t(?P<lbl>[a-zA-Z0-9_]+)$', line)
+			if m is not None:
+				processed = True
+				converted += '\t.importzp {}\n'.format(m.group('lbl'))
+
+		if not processed:
+			m = re.match('^\tglobal\t(?P<lbl>[a-zA-Z0-9_]+)$', line)
+			if m is not None:
+				processed = True
+				globals_declarations.append(m.group('lbl'))
+
+		if not processed:
+			m = re.match('^(?P<lbl>[a-zA-Z0-9_]+):$', line)
+			if m is not None:
+				processed = True
+				local_labels.append(m.group('lbl'))
+				converted += '{}\n'.format(line)
+
+		if not processed:
+			converted += '{}\n'.format(line)
+			processed = True
+
+		assert processed
+
+# Generate import/export section
+for lbl in globals_declarations:
+	if lbl in local_labels:
+		converted += '\t.export\t{}\n'.format(lbl)
+	else:
+		converted += '\t.import\t{}\n'.format(lbl)
+
+# Write destination
+with open(dest_path, 'w') as dest:
+	dest.write(converted)
