@@ -16,6 +16,7 @@ dest_path = args.output if args.output != '' else source_path
 converted = ''
 local_labels = []
 globals_declarations = []
+zp_imports = []
 with open(source_path, 'r') as source:
 	for line in source:
 		line = line.rstrip('\r\n')
@@ -43,7 +44,7 @@ with open(source_path, 'r') as source:
 			m = re.match('^\tzpage\t(?P<lbl>[a-zA-Z0-9_]+)$', line)
 			if m is not None:
 				processed = True
-				converted += '\t.importzp {}\n'.format(m.group('lbl'))
+				zp_imports.append(m.group('lbl'))
 
 		if not processed:
 			m = re.match('^\tglobal\t(?P<lbl>[a-zA-Z0-9_]+)$', line)
@@ -65,11 +66,17 @@ with open(source_path, 'r') as source:
 		assert processed
 
 # Generate import/export section
+header = ''
 for lbl in globals_declarations:
 	if lbl in local_labels:
-		converted += '\t.export\t{}\n'.format(lbl)
+		header += '\t.export\t{}\n'.format(lbl)
 	else:
-		converted += '\t.import\t{}\n'.format(lbl)
+		header += '\t.import\t{}\n'.format(lbl)
+
+for lbl in zp_imports:
+	header += '\t.importzp {}\n'.format(lbl)
+
+converted = header + converted
 
 # Write destination
 with open(dest_path, 'w') as dest:
