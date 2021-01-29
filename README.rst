@@ -21,4 +21,6 @@ Impacting environment variable
  * CA65_BIN
  * LD65_BIN
  * GCC6502_BIN
+ * **VBCC_BIN**: *vc* binary from VBCC toolchain (default: ``vc``)
+ * **VBCC**: shall point to VBCC's root dir for vbcc compilation to work
  * EMU65
