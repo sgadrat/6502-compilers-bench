@@ -8,9 +8,13 @@ import shutil
 import subprocess
 import sys
 
+# Globals
+verbose = False
+
 # Utility
 def cmd(args):
-	#print('cmd "{}"'.format(' '.join(args)))
+	if verbose:
+		sys.stderr.write('cmd "{}"\n'.format(' '.join(args)))
 	subprocess.run(args, check=True)
 
 # Default params value
@@ -30,12 +34,14 @@ parser.add_argument('sources', metavar='N', type=str, nargs='+', help='Files to 
 parser.add_argument('--options', '-O', type=str, default='', help='Compilation options')
 parser.add_argument('--template-dir', '-t', type=str, default=default_template_dir, help='Directory containing reference files')
 parser.add_argument('--working-dir', '-w', type=str, default=default_working_dir, help='Directory in which the bench is built')
+parser.add_argument('--verbose', '-v', action='store_true', help='print compiler commands issued on stderr')
 args = parser.parse_args()
 
 source_list = [os.path.abspath(p) if p != '-' else '-' for p in args.sources]
 compil_options = args.options.split(' ') if args.options != '' else []
 template_dir = os.path.abspath(args.template_dir)
 working_dir = os.path.abspath(args.working_dir)
+verbose = args.verbose
 
 # Setup working directory
 shutil.copytree(template_dir, working_dir)
