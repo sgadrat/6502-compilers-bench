@@ -60,21 +60,20 @@ built_dbg_path = os.path.join(working_dir, 'bench.dbg')
 
 user_obj_files = []
 generated_asm = []
-for original_source_path in source_list:
-	if original_source_path == '-':
+for source_path in source_list:
+	if source_path == '-':
 		source_contents = sys.stdin.read()
-		original_source_path = os.path.join(working_dir, 'stdin.c')
-		with open(original_source_path, 'w') as source_file:
+		source_path = os.path.join(working_dir, 'stdin.c')
+		with open(source_path, 'w') as source_file:
 			source_file.write(source_contents)
 
-	basename = os.path.basename(original_source_path)
-	source_path = os.path.join(working_dir, basename)
+	basename = os.path.basename(source_path)
 	built_asm_path = os.path.join(working_dir, os.path.splitext(basename)[0]+'.s')
 	built_obj_path = os.path.join(working_dir, os.path.splitext(basename)[0]+'.o')
 
 	generated = None
 	if os.path.splitext(basename)[1] in ['.s', '.asm']:
-		shutil.copy(original_source_path, built_asm_path)
+		shutil.copy(source_path, built_asm_path)
 		generated = readf(built_asm_path)
 	else:
 		cmd([vbcc] + compil_options + [source_path, '-S', '-o', built_asm_path])
