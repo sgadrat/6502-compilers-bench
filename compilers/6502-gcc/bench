@@ -1,0 +1,79 @@
+#!/usr/bin/env python3
+
+import argparse
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+
+# Utility
+def cmd(args):
+	#print('cmd "{}"'.format(' '.join(args)))
+	subprocess.run(args, check=True)
+
+# Default params value
+default_template_dir = os.path.abspath(os.path.dirname(sys.argv[0]))
+default_working_dir = '/tmp/c65_bench'
+
+# Params from environement
+ca65 = os.getenv('CA65_BIN', 'ca65')
+ld65 = os.getenv('LD65_BIN', 'ld65')
+gcc = os.getenv('GCC6502_BIN', '6502-gcc')
+
+# Params from commandline
+parser = argparse.ArgumentParser(description='Bench input code, compiled by 6502-gcc')
+parser.add_argument('sources', metavar='N', type=str, nargs='+', help='Files to compile')
+parser.add_argument('--options', '-O', type=str, default='', help='Compilation options')
+parser.add_argument('--template-dir', '-t', type=str, default=default_template_dir, help='Directory containing reference files')
+parser.add_argument('--working-dir', '-w', type=str, default=default_working_dir, help='Directory in which the bench is built')
+args = parser.parse_args()
+
+source_list = [os.path.abspath(p) if p != '-' else '-' for p in args.sources]
+compil_options = args.options.split(' ') if args.options != '' else []
+template_dir = os.path.abspath(args.template_dir)
+working_dir = os.path.abspath(args.working_dir)
+
+# Setup working directory
+shutil.copytree(template_dir, working_dir)
+os.chdir(working_dir)
+
+# Compile test's main
+cmd([ca65, 'bench.s'])
+
+# Build bench
+built_prg_path = os.path.join(working_dir, 'bench.6502')
+built_dbg_path = os.path.join(working_dir, 'bench.dbg')
+
+user_obj_files = []
+for original_source_path in source_list:
+	basename = os.path.basename(original_source_path)
+	source_path = os.path.join(working_dir, basename)
+	built_asm_path = os.path.join(working_dir, os.path.splitext(basename)[0]+'.s')
+	built_obj_path = os.path.join(working_dir, os.path.splitext(basename)[0]+'.o')
+
+	cmd([gcc] + compil_options + [source_path, '-S', '-o', built_asm_path])
+	cmd([ca65, built_asm_path])
+	user_obj_files.append(built_obj_path)
+
+cmd([ld65, '-o', built_prg_path, '-C', os.path.join(working_dir, 'ld65.cfg'), '--dbgfile', built_dbg_path, 'bench.o'] + user_obj_files)
+
+# Extract code size info
+code_size = None
+with open(built_dbg_path, 'r') as dbg_file:
+	for line in dbg_file:
+		line = line.rstrip('\r\n')
+		m = re.match('seg\tid=[0-9]+,name="CODE",start=0x[0-9A-F]+,size=0x(?P<size>[0-9A-F]+),.*', line)
+		if m is not None:
+			assert code_size is None, 'two lines match CODE section in dbg file'
+			code_size = int(m.group('size'), 16)
+
+assert code_size is not None, 'CODE section size not found in dbg file'
+
+#TODO Run bench
+
+# Output bench result
+print(json.dumps({
+	'code_size': code_size,
+}))

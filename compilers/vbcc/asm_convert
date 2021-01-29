@@ -4,7 +4,7 @@ import sys
 import re
 
 # Parse command line
-parser = argparse.ArgumentParser(description='convert a vbcc asm to to a ca6502 compatilble one')
+parser = argparse.ArgumentParser(description='convert a vbcc asm to to a ca6502 compatible one')
 parser.add_argument('source', type=str, help='file to convert')
 parser.add_argument('--output', '-o', type=str, default='', help='destination (default: overwrite source file)')
 args = parser.parse_args()
