@@ -18,6 +18,7 @@ variant() {
 
 variant "nooptim" ""
 variant "all" "-O -Oi -Or -Os"
+variant "oirs" "-Oirs"
 
 #
 # Extract metrics
@@ -42,3 +43,4 @@ extract() {
 
 extract "nooptim"
 extract "all"
+extract "oirs"
