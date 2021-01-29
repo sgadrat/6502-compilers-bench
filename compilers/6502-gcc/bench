@@ -51,6 +51,12 @@ built_dbg_path = os.path.join(working_dir, 'bench.dbg')
 user_obj_files = []
 generated_asm = []
 for original_source_path in source_list:
+	if original_source_path == '-':
+		source_contents = sys.stdin.read()
+		original_source_path = os.path.join(working_dir, 'stdin.c')
+		with open(original_source_path, 'w') as source_file:
+			source_file.write(source_contents)
+
 	basename = os.path.basename(original_source_path)
 	source_path = os.path.join(working_dir, basename)
 	built_asm_path = os.path.join(working_dir, os.path.splitext(basename)[0]+'.s')
