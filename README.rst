@@ -19,6 +19,7 @@ Running benchs
 Impacting environment variable
 
  * CA65_BIN
+ * CC65_BIN
  * LD65_BIN
  * GCC6502_BIN
  * **VBCC_BIN**: *vc* binary from VBCC toolchain (default: ``vc``)
