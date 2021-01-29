@@ -8,6 +8,13 @@
 
 // g++ -Imos6502 emulator.cpp mos6502/mos6502.cpp -o emulator
 
+class StoppedByProgram: public std::runtime_error {
+public:
+	StoppedByProgram(const std::string& what_arg)
+	: std::runtime_error(what_arg)
+	{}
+};
+
 static void usage(std::ostream& os) {
 	os <<
 		"usage: emulator <program>\n"
@@ -56,28 +63,34 @@ int main(int argc, char** argv) {
 			if (addr < RAM_SIZE) {
 				ram[addr] = val;
 			}else if (addr == 0x5000 && val == 0) {
-				throw std::runtime_error("TODO make a type for this error (or better, cleanly quit the emulator's loop)");
+				throw StoppedByProgram("stopped by program");
 			}
 		}
 	);
 
 	emulator.Reset();
+	bool execution_error = false;
 	try {
 		emulator.Run(10'000'000);
+	}catch (StoppedByProgram const&) {
+		// Graceful stop, nothing to do
 	}catch (std::runtime_error const& e) {
-		std::cout << "stopped by " << e.what() << '\n';
+		std::cerr << "stopped by " << e.what() << '\n';
+		execution_error = true;
 	}
 
 	// Print result
-	std::cout << "cycles consumed: " << emulator.cycleCount << '\n';
-	std::cout << "RAM {\n\t";
+	std::cout << '{';
+	std::cout << "\"cycle_count\": " << emulator.cycleCount << ',';
+	std::cout << "\"ram\": [";
 	for (size_t i = 0; i < ram.size(); ++i) {
-		if (i % 0x10 == 0 && i != 0) {
-			printf("\n\t");
+		if (i != 0) {
+			std::cout << ", ";
 		}
-		::printf("%02x ", ram[i]);
+		std::cout << uint16_t(ram[i]);
 	}
-	std::cout << "\n}\n";
+	std::cout << "]";
+	std::cout << "}\n";
 
-	return 0;
+	return execution_error ? 1 : 0;
 }
