@@ -49,6 +49,7 @@ built_prg_path = os.path.join(working_dir, 'bench.6502')
 built_dbg_path = os.path.join(working_dir, 'bench.dbg')
 
 user_obj_files = []
+generated_asm = []
 for original_source_path in source_list:
 	basename = os.path.basename(original_source_path)
 	source_path = os.path.join(working_dir, basename)
@@ -57,6 +58,12 @@ for original_source_path in source_list:
 
 	cmd([gcc] + compil_options + [source_path, '-S', '-o', built_asm_path])
 	cmd([ca65, built_asm_path])
+
+	with open(built_asm_path, 'r') as built_asm_file:
+		generated_asm.append({
+			'source': basename,
+			'asm': built_asm_file.read()
+		})
 	user_obj_files.append(built_obj_path)
 
 cmd([ld65, '-o', built_prg_path, '-C', os.path.join(working_dir, 'ld65.cfg'), '--dbgfile', built_dbg_path, 'bench.o'] + user_obj_files)
@@ -81,5 +88,6 @@ run_report = json.loads(run_report_s)
 print(json.dumps({
 	'code_size': code_size,
 	'cycle_count': run_report['cycle_count'],
-	'ram': run_report['ram']
+	'ram': run_report['ram'],
+	'asm': generated_asm
 }))
