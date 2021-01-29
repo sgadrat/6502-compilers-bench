@@ -14,6 +14,7 @@ def cmd(args):
 	subprocess.run(args, check=True)
 
 # Default params value
+default_emulator = os.path.join(os.path.abspath(os.path.dirname(sys.argv[0])), '../../emulator/emulator')
 default_template_dir = os.path.abspath(os.path.dirname(sys.argv[0]))
 default_working_dir = '/tmp/c65_bench'
 
@@ -21,6 +22,7 @@ default_working_dir = '/tmp/c65_bench'
 ca65 = os.getenv('CA65_BIN', 'ca65')
 ld65 = os.getenv('LD65_BIN', 'ld65')
 gcc = os.getenv('GCC6502_BIN', '6502-gcc')
+emulator = os.getenv('EMU65', default_emulator)
 
 # Params from commandline
 parser = argparse.ArgumentParser(description='Bench input code, compiled by 6502-gcc')
@@ -71,9 +73,13 @@ with open(built_dbg_path, 'r') as dbg_file:
 
 assert code_size is not None, 'CODE section size not found in dbg file'
 
-#TODO Run bench
+# Run bench
+run_report_s = subprocess.run([emulator, built_prg_path], capture_output=True, check=True, universal_newlines=True).stdout
+run_report = json.loads(run_report_s)
 
 # Output bench result
 print(json.dumps({
 	'code_size': code_size,
+	'cycle_count': run_report['cycle_count'],
+	'ram': run_report['ram']
 }))
