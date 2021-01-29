@@ -62,7 +62,10 @@ for original_source_path in source_list:
 	built_asm_path = os.path.join(working_dir, os.path.splitext(basename)[0]+'.s')
 	built_obj_path = os.path.join(working_dir, os.path.splitext(basename)[0]+'.o')
 
-	cmd([gcc] + compil_options + [source_path, '-S', '-o', built_asm_path])
+	if os.path.splitext(basename)[1] in ['.s', '.asm']:
+		shutil.copy(original_source_path, built_asm_path)
+	else:
+		cmd([gcc] + compil_options + [source_path, '-S', '-o', built_asm_path])
 	cmd([ca65, built_asm_path])
 
 	with open(built_asm_path, 'r') as built_asm_file:
