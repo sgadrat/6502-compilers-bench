@@ -1,5 +1,8 @@
 /*
  * A simplified memcpy, with `n` being on one byte and without return value.
+ *
+ * This version is intentionaly coded the closer as possible to what one would do in ASM.
+ * One side effect is that the `n` value may trick, it will copy n+1 bytes (allowing 256 bytes, but no 0 byte)
  */
 #include <stdint.h>
 
