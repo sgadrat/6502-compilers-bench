@@ -1,0 +1,105 @@
+#!/usr/bin/env python3
+import argparse
+import sys
+import re
+
+# Parse command line
+parser = argparse.ArgumentParser(description='convert a vbcc asm to to a ca6502 compatible one')
+parser.add_argument('source', type=str, help='file to convert')
+parser.add_argument('--output', '-o', type=str, default='', help='destination (default: overwrite source file)')
+args = parser.parse_args()
+
+source_path = args.source
+dest_path = args.output if args.output != '' else source_path
+
+# Read source, and convert on the fly what can be, gather stats for the rest
+converted = ''
+current_segment = None
+known_segments = {
+	'Code': 'CODE',
+	'Data': 'RODATA',
+}
+with open(source_path, 'r') as source:
+	for line in source:
+		line = line.rstrip('\r\n')
+		processed = False
+
+		#
+		# Lines that we want to keep even if on ignored segments
+		#
+
+		if not processed:
+			m = re.match('^( *).label (?P<lbl>[^ ]+ = [^ ]+)$', line)
+			if m is not None:
+				processed = True
+				converted += '    {}\n'.format(m.group('lbl'))
+
+		if not processed:
+			m = re.match('^( *).const (?P<lbl>[^ ]+ = [^ ]+)$', line)
+			if m is not None:
+				processed = True
+				converted += '    {}\n'.format(m.group('lbl'))
+
+		if not processed:
+			m = re.match('^.segment (?P<seg>[A-Za-z]+)$', line)
+			if m is not None:
+				processed = True
+				if m.group('seg') in known_segments:
+					converted += '.segment "{}"\n'.format(known_segments[m.group('seg')])
+					current_segment = m.group('seg')
+
+		# Lines ignored outsied of known segments
+
+		if current_segment in known_segments:
+			m = re.match('^    (?P<opcode>[a-z][a-z][a-z])\.z(?P<param>.*)$', line)
+			if m is not None:
+				processed = True
+				converted += '    {}{}\n'.format(m.group('opcode'), m.group('param'))
+
+			m = re.match('^    (?P<opcode>[a-z][a-z][a-z]) !\+$', line)
+			if m is not None:
+				processed = True
+				converted += '    {} :+\n'.format(m.group('opcode'))
+
+			m = re.match('^  !:$', line)
+			if m is not None:
+				processed = True
+				converted += '  :\n'
+
+			m = re.match('^(?P<lbl>[^ ]+): \{$', line)
+			if m is not None:
+				processed = True
+				converted += '{}:\n'.format(m.group('lbl'))
+				converted += '.scope\n'
+
+			m = re.match('^}$', line)
+			if m is not None:
+				processed = True
+				converted += '.endscope\n'
+
+			m = re.match('( *)//(?P<comment>.*)', line)
+			if m is not None:
+				processed = True
+				converted += ';{}\n'.format(m.group('comment'))
+
+		# Print passthru lines
+
+		if not processed and current_segment in known_segments:
+			converted += '{}\n'.format(line)
+			processed = True
+
+		assert processed or current_segment not in known_segments
+
+# Add a dummy MAIN segment
+converted += '.segment "MAIN"\n'
+converted += '.byte 0\n'
+
+# Add vectors segment
+converted += '.segment "VECTORS"\n'
+converted += '.word main\n'
+converted += '.word main\n'
+converted += '.word main\n'
+
+# Write destination
+with open(dest_path, 'w') as dest:
+	dest.write(converted)

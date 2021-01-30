@@ -29,11 +29,11 @@ default_working_dir = '/tmp/c65_bench'
 # Params from environement
 ca65 = os.getenv('CA65_BIN', 'ca65')
 ld65 = os.getenv('LD65_BIN', 'ld65')
-vbcc = os.getenv('VBCC_BIN', 'vc')
+kickc = os.getenv('KICKC_BIN', 'kickc.sh')
 emulator = os.getenv('EMU65', default_emulator)
 
 # Params from commandline
-parser = argparse.ArgumentParser(description='Bench input code, compiled by VBCC')
+parser = argparse.ArgumentParser(description='Bench input code, compiled by KickC')
 parser.add_argument('sources', metavar='N', type=str, nargs='+', help='Files to compile')
 parser.add_argument('--options', '-O', type=str, default='', help='Compilation options')
 parser.add_argument('--template-dir', '-t', type=str, default=default_template_dir, help='Directory containing reference files')
@@ -51,43 +51,33 @@ verbose = args.verbose
 shutil.copytree(template_dir, working_dir)
 os.chdir(working_dir)
 
-# Compile test's main
-cmd([ca65, 'bench.s'])
-
 # Build bench
 built_prg_path = os.path.join(working_dir, 'bench.6502')
 built_dbg_path = os.path.join(working_dir, 'bench.dbg')
+built_asm_path = 'bench.s'
 
-user_obj_files = []
-generated_asm = []
-for source_path in source_list:
+generated_asm = [built_asm_path]
+for i in range(len(source_list)):
+	source_path = source_list[i]
 	if source_path == '-':
 		source_contents = sys.stdin.read()
 		source_path = os.path.join(working_dir, 'stdin.c')
 		with open(source_path, 'w') as source_file:
 			source_file.write(source_contents)
+		source_list[i] = source_path
 
-	basename = os.path.basename(source_path)
-	built_asm_path = os.path.join(working_dir, os.path.splitext(basename)[0]+'.s')
-	built_obj_path = os.path.join(working_dir, os.path.splitext(basename)[0]+'.o')
+cmd([kickc] + compil_options + ['-cpu=rom6502', '-t', 'nes', 'bench.c'] + source_list)
+generated = readf('bench.asm')
+cmd([os.path.join(working_dir, 'asm_convert'), '-o', built_asm_path, 'bench.asm'])
 
-	generated = None
-	if os.path.splitext(basename)[1] in ['.s', '.asm']:
-		shutil.copy(source_path, built_asm_path)
-		generated = readf(built_asm_path)
-	else:
-		cmd([vbcc] + compil_options + [source_path, '-S', '-o', built_asm_path])
-		generated = readf(built_asm_path)
-		cmd([os.path.join(working_dir, 'asm_convert'), built_asm_path])
-	cmd([ca65, built_asm_path])
+cmd([ca65, built_asm_path])
 
-	generated_asm.append({
-		'source': basename,
-		'asm': generated
-	})
-	user_obj_files.append(built_obj_path)
+generated_asm.append({
+	'source': 'all_merged.c',
+	'asm': generated
+})
 
-cmd([ld65, '-o', built_prg_path, '-C', os.path.join(working_dir, 'ld65.cfg'), '--dbgfile', built_dbg_path, 'bench.o'] + user_obj_files)
+cmd([ld65, '-o', built_prg_path, '-C', os.path.join(working_dir, 'ld65.cfg'), '--dbgfile', built_dbg_path, 'bench.o'])
 
 # Extract code size info
 code_size = None
