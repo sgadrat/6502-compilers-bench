@@ -41,6 +41,12 @@ with open(source_path, 'r') as source:
 				converted += '\t.word {}\n'.format(m.group('val'))
 
 		if not processed:
+			m = re.match('^\tbyte\t(?P<val>[0-9]+)$', line)
+			if m is not None:
+				processed = True
+				converted += '\t.byte {}\n'.format(m.group('val'))
+
+		if not processed:
 			m = re.match('^\tzpage\t(?P<lbl>[a-zA-Z0-9_]+)$', line)
 			if m is not None:
 				processed = True
