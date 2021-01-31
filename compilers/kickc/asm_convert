@@ -14,9 +14,17 @@ source_path = args.source
 dest_path = args.output if args.output != '' else source_path
 
 # Read source, and convert on the fly what can be, gather stats for the rest
+def scope(lbl):
+	res = lbl
+	if '.' in lbl:
+		res = '{}scoped_lbls::{}'.format('#' if lbl[0] == '#' else '', lbl.replace('.', '__'))
+	return res
+
 converted = ''
 current_segment = None
+current_scope = None
 in_main = False
+scoped_labels = {}
 known_segments = {
 	'Code': 'CODE',
 	'Data': 'RODATA',
@@ -31,16 +39,26 @@ with open(source_path, 'r') as source:
 		#
 
 		if not processed:
-			m = re.match('^( *).label (?P<lbl>[^ ]+ = [^ ]+)$', line)
+			m = re.match('^( *).label (?P<lbl>[^ ]+) = (?P<orig>[^ ]+)$', line)
 			if m is not None:
 				processed = True
-				converted += '    {}\n'.format(m.group('lbl'))
+				converted += '    {} = {}\n'.format(m.group('lbl'), scope(m.group('orig')))
+				if current_scope is not None:
+					lbl_def = {'lbl': m.group('lbl'), 'val': scope(m.group('orig'))}
+					if current_scope not in scoped_labels:
+						scoped_labels[current_scope] = []
+					scoped_labels[current_scope].append({'lbl': m.group('lbl'), 'val': scope(m.group('orig'))})
 
 		if not processed:
-			m = re.match('^( *).const (?P<lbl>[^ ]+ = [^ ]+)$', line)
+			m = re.match('^( *).const (?P<lbl>[^ ]+) = (?P<orig>[^ ]+)$', line)
 			if m is not None:
 				processed = True
-				converted += '    {}\n'.format(m.group('lbl'))
+				converted += '    {} = {}\n'.format(m.group('lbl'), scope(m.group('orig')))
+				if current_scope is not None:
+					lbl_def = {'lbl': m.group('lbl'), 'val': scope(m.group('orig'))}
+					if current_scope not in scoped_labels:
+						scoped_labels[current_scope] = []
+					scoped_labels[current_scope].append({'lbl': m.group('lbl'), 'val': scope(m.group('orig'))})
 
 		if not processed:
 			m = re.match('^.segment (?P<seg>[A-Za-z]+)$', line)
@@ -53,42 +71,55 @@ with open(source_path, 'r') as source:
 		# Lines ignored outsied of known segments
 
 		if current_segment in known_segments:
-			m = re.match('^    (?P<opcode>[a-z][a-z][a-z])\.z(?P<param>.*)$', line)
-			if m is not None:
-				processed = True
-				converted += '    {}{}\n'.format(m.group('opcode'), m.group('param'))
+			if not processed:
+				m = re.match('^    (?P<opcode>[a-z][a-z][a-z]((\.z)?)) (?P<lbl>[^ ]+\.[^ ]+)$', line)
+				if m is not None:
+					line = '    {} {}'.format(m.group('opcode'), scope(m.group('lbl')))
 
-			m = re.match('^    (?P<opcode>[a-z][a-z][a-z]) !\+$', line)
-			if m is not None:
-				processed = True
-				converted += '    {} :+\n'.format(m.group('opcode'))
+			if not processed:
+				m = re.match('^    (?P<opcode>[a-z][a-z][a-z])\.z(?P<param>.*)$', line)
+				if m is not None:
+					processed = True
+					converted += '    {}{}\n'.format(m.group('opcode'), m.group('param'))
 
-			m = re.match('^  !:$', line)
-			if m is not None:
-				processed = True
-				converted += '  :\n'
+			if not processed:
+				m = re.match('^    (?P<opcode>[a-z][a-z][a-z]) !\+$', line)
+				if m is not None:
+					processed = True
+					converted += '    {} :+\n'.format(m.group('opcode'))
 
-			m = re.match('^(?P<lbl>[^ ]+): \{$', line)
-			if m is not None:
-				processed = True
-				if m.group('lbl') == 'main':
-					converted += '.segment "MAIN"\n'
-					in_main = True
-				converted += '{}:\n'.format(m.group('lbl'))
-				converted += '.scope\n'
+			if not processed:
+				m = re.match('^  !:$', line)
+				if m is not None:
+					processed = True
+					converted += '  :\n'
 
-			m = re.match('^}$', line)
-			if m is not None:
-				processed = True
-				converted += '.endscope\n'
-				if in_main:
-					converted += '.segment "{}"\n'.format(known_segments[current_segment])
-					in_main = False
+			if not processed:
+				m = re.match('^(?P<lbl>[^ ]+): \{$', line)
+				if m is not None:
+					processed = True
+					if m.group('lbl') == 'main':
+						converted += '.segment "MAIN"\n'
+						in_main = True
+					converted += '{}:\n'.format(m.group('lbl'))
+					converted += '.scope {}\n'.format(m.group('lbl'))
+					current_scope = m.group('lbl')
 
-			m = re.match('( *)//(?P<comment>.*)', line)
-			if m is not None:
-				processed = True
-				converted += ';{}\n'.format(m.group('comment'))
+			if not processed:
+				m = re.match('^}$', line)
+				if m is not None:
+					processed = True
+					converted += '.endscope\n'
+					if in_main:
+						converted += '.segment "{}"\n'.format(known_segments[current_segment])
+						in_main = False
+					current_scope = None
+
+			if not processed:
+				m = re.match('( *)//(?P<comment>.*)', line)
+				if m is not None:
+					processed = True
+					converted += ';{}\n'.format(m.group('comment'))
 
 		# Print passthru lines
 
@@ -107,6 +138,15 @@ converted += '.segment "VECTORS"\n'
 converted += '.word main\n'
 converted += '.word main\n'
 converted += '.word main\n'
+
+# Add scoped labels
+scoped_labels_asm = '.scope scoped_lbls\n'
+for scope_name in scoped_labels:
+	for lbl in scoped_labels[scope_name]:
+		scoped_labels_asm += '    {}__{} = {}\n'.format(scope_name, lbl['lbl'], lbl['val'])
+scoped_labels_asm += '.endscope\n'
+
+converted = scoped_labels_asm + converted
 
 # Write destination
 with open(dest_path, 'w') as dest:
