@@ -12,8 +12,8 @@ Run the bench
 
 6502-gcc, vbcc::
 
-	$ compilers/<compiler>/bench --options="<your_favorite_optims>" code_samples/rpg/rpg_cc65.c
+	$ compilers/<compiler>/bench --options="<your_favorite_optims>" code_samples/rpg/rpg.c
 
 cc65, KickC::
 
-	$ compilers/<compiler>/bench --options="<your_favorite_optims>" code_samples/rpg/rpg.c
+	$ compilers/<compiler>/bench --options="<your_favorite_optims>" code_samples/rpg/rpg_cc65.c
