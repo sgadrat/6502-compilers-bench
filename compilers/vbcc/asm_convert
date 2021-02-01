@@ -90,7 +90,7 @@ with open(source_path, 'r') as source:
 		assert processed
 
 # Generate import/export section
-header = ''
+header = '\t.autoimport +\n'
 for lbl in globals_declarations:
 	if lbl in local_labels:
 		header += '\t.export\t{}\n'.format(lbl)

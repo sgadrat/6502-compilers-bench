@@ -54,6 +54,7 @@ os.chdir(working_dir)
 # Build bench
 built_prg_path = os.path.join(working_dir, 'bench.6502')
 built_dbg_path = os.path.join(working_dir, 'bench.dbg')
+built_map_file = os.path.join(working_dir, 'bench.map')
 built_asm_path = 'bench.s'
 
 generated_asm = [built_asm_path]
@@ -77,7 +78,7 @@ generated_asm.append({
 	'asm': generated
 })
 
-cmd([ld65, '-o', built_prg_path, '-C', os.path.join(working_dir, 'ld65.cfg'), '--dbgfile', built_dbg_path, 'bench.o'])
+cmd([ld65, '-o', built_prg_path, '-C', os.path.join(working_dir, 'ld65.cfg'), '--dbgfile', built_dbg_path, '--mapfile', built_map_file, 'bench.o'])
 
 # Extract code size info
 code_size = None

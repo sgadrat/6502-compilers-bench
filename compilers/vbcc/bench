@@ -30,6 +30,7 @@ default_working_dir = '/tmp/c65_bench'
 ca65 = os.getenv('CA65_BIN', 'ca65')
 ld65 = os.getenv('LD65_BIN', 'ld65')
 vbcc = os.getenv('VBCC_BIN', 'vc')
+vbcc_sdk = os.getenv('VBCC')
 emulator = os.getenv('EMU65', default_emulator)
 
 # Params from commandline
@@ -57,6 +58,7 @@ cmd([ca65, 'bench.s'])
 # Build bench
 built_prg_path = os.path.join(working_dir, 'bench.6502')
 built_dbg_path = os.path.join(working_dir, 'bench.dbg')
+built_map_file = os.path.join(working_dir, 'bench.map')
 
 user_obj_files = []
 generated_asm = []
@@ -87,7 +89,12 @@ for source_path in source_list:
 	})
 	user_obj_files.append(built_obj_path)
 
-cmd([ld65, '-o', built_prg_path, '-C', os.path.join(working_dir, 'ld65.cfg'), '--dbgfile', built_dbg_path, 'bench.o'] + user_obj_files)
+#TODO First branch disabled, libvc.a fails to be parsed by ld65
+#  it is an AR archive, but visibly incompatible with ld65. Need some expert here. Maybe we can convert from one to another?
+if False and vbcc_sdk is not None:
+	cmd([ld65, '-o', built_prg_path, '-C', os.path.join(working_dir, 'ld65.cfg'), '--lib-path', '{}/targets/6502-nes/lib'.format(vbcc_sdk), '--dbgfile', built_dbg_path, '--mapfile', built_map_file, 'bench.o'] + user_obj_files + ['libvc.a'])
+else:
+	cmd([ld65, '-o', built_prg_path, '-C', os.path.join(working_dir, 'ld65.cfg'), '--dbgfile', built_dbg_path, '--mapfile', built_map_file, 'bench.o'] + user_obj_files)
 
 # Extract code size info
 code_size = None

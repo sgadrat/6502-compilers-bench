@@ -53,6 +53,7 @@ cmd([ca65, 'bench.s'])
 # Build bench
 built_prg_path = os.path.join(working_dir, 'bench.6502')
 built_dbg_path = os.path.join(working_dir, 'bench.dbg')
+built_map_file = os.path.join(working_dir, 'bench.map')
 
 user_obj_files = []
 generated_asm = []
@@ -67,7 +68,7 @@ for source_path in source_list:
 	built_asm_path = os.path.join(working_dir, os.path.splitext(basename)[0]+'.s')
 	built_obj_path = os.path.join(working_dir, os.path.splitext(basename)[0]+'.o')
 
-	if os.path.splitext(basename)[1] in ['.s', '.asm']:
+	if os.path.splitext(basename)[1] in ['.s', '.S', '.asm']:
 		shutil.copy(source_path, built_asm_path)
 	else:
 		cmd([gcc] + compil_options + [source_path, '-S', '-o', built_asm_path])
@@ -80,7 +81,9 @@ for source_path in source_list:
 		})
 	user_obj_files.append(built_obj_path)
 
-cmd([ld65, '-o', built_prg_path, '-C', os.path.join(working_dir, 'ld65.cfg'), '--dbgfile', built_dbg_path, 'bench.o'] + user_obj_files)
+#TODO parametrizable libs path
+#cmd([ld65, '-o', built_prg_path, '-C', os.path.join(working_dir, 'ld65.cfg'), '--dbgfile', built_dbg_path, 'bench.o'] + user_obj_files)
+cmd([ld65, '-o', built_prg_path, '-C', os.path.join(working_dir, 'ld65.cfg'), '--dbgfile', built_dbg_path, '--mapfile', built_map_file, 'bench.o'] + user_obj_files + ['/home/sylvain/workspace/nes/n++/gcc-6502-bits/gcc-build/6502/libgcc/libgcc.a', '/home/sylvain/workspace/nes/n++/gcc-6502-bits/libtinyc/libtinyc.a'])
 
 # Extract code size info
 code_size = None

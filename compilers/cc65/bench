@@ -54,6 +54,7 @@ cmd([ca65, 'bench.s'])
 # Build bench
 built_prg_path = os.path.join(working_dir, 'bench.6502')
 built_dbg_path = os.path.join(working_dir, 'bench.dbg')
+built_map_file = os.path.join(working_dir, 'bench.map')
 
 user_obj_files = []
 generated_asm = []
@@ -84,7 +85,7 @@ for source_path in source_list:
 lib_options = []
 if cc65_lib != '':
 	lib_options = ['--lib-path', cc65_lib]
-cmd([ld65] + lib_options + ['-o', built_prg_path, '-C', os.path.join(working_dir, 'ld65.cfg'), '--dbgfile', built_dbg_path, 'bench.o'] + user_obj_files + ['nes.lib'])
+cmd([ld65] + lib_options + ['-o', built_prg_path, '-C', os.path.join(working_dir, 'ld65.cfg'), '--dbgfile', built_dbg_path, '--mapfile', built_map_file, 'bench.o'] + user_obj_files + ['nes.lib'])
 
 # Extract code size info
 code_size = None
