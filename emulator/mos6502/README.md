@@ -12,3 +12,4 @@ Original project: https://github.com/gianlucag/mos6502.git (commit 8ae598411793f
 - Cycle count is exact
   - Adressing with a page-cross for read operations take one more cycle than in table
   - Branching operations take one or two more cycles if branch is taken (depending on page-cross)
+- Run time limitation can use full uint64 range

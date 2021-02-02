@@ -1,5 +1,6 @@
 
 #include "mos6502.h"
+#include <algorithm>
 
 namespace {
 uint8_t msb(uint16_t val) {
@@ -936,7 +937,7 @@ void mos6502::NMI()
 }
 
 void mos6502::Run(
-	int32_t cyclesRemaining,
+	uint64_t cyclesRemaining,
 	CycleMethod cycleMethod
 ) {
 	uint8_t opcode;
@@ -955,9 +956,10 @@ void mos6502::Run(
 		// execute
 		Exec(instr);
 		cycleCount += instr.cycles;
-		cyclesRemaining -=
+		uint64_t cyclesConsumed =
 			cycleMethod == CYCLE_COUNT        ? instr.cycles
 			/* cycleMethod == INST_COUNT */   : 1;
+		cyclesRemaining -= std::min(cyclesRemaining, cyclesConsumed);
 	}
 }
 

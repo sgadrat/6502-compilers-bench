@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
 	emulator.Reset();
 	bool execution_error = false;
 	try {
-		emulator.Run(10'000'000);
+		emulator.Run(100'000'000);
 	}catch (StoppedByProgram const&) {
 		// Graceful stop, nothing to do
 	}catch (std::runtime_error const& e) {

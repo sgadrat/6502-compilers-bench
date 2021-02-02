@@ -192,6 +192,6 @@ public:
 	void IRQ();
 	void Reset();
 	void Run(
-		int32_t cycles,
+		uint64_t cycles,
 		CycleMethod cycleMethod = CYCLE_COUNT);
 };
