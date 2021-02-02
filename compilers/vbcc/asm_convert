@@ -29,6 +29,18 @@ with open(source_path, 'r') as source:
 				converted += '\t.segment "CODE"\n'
 
 		if not processed:
+			m = re.match('^\tsection\tdata$', line)
+			if m is not None:
+				processed = True
+				converted += '\t.segment "RODATA"\n'
+
+		if not processed:
+			m = re.match('^\tsection\tbss$', line)
+			if m is not None:
+				processed = True
+				converted += '\t.segment "BSS"\n'
+
+		if not processed:
 			m = re.match('^\tsection\trodata$', line)
 			if m is not None:
 				processed = True
@@ -45,6 +57,12 @@ with open(source_path, 'r') as source:
 			if m is not None:
 				processed = True
 				converted += '\t.byte {}\n'.format(m.group('val'))
+
+		if not processed:
+			m = re.match('^\treserve\t(?P<val>[0-9]+)$', line)
+			if m is not None:
+				processed = True
+				converted += '\t.res {}\n'.format(m.group('val'))
 
 		if not processed:
 			m = re.match('^\tzpage\t(?P<lbl>[a-zA-Z0-9_]+)$', line)
