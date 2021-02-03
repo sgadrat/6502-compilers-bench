@@ -8,11 +8,13 @@
  *  - Benchmark framework replaced by a call to a dummy routine (the emulator does the bench in our case)
  *  - atari.h dependency replaced by a constant to a memory area for the screen
  *  - Removed useless semicolon after functions
- *  - - Less unused space on screen (screen entirely fits 2 pages)
+ *  - Less unused space on screen (screen entirely fits 2 pages)
+ *  - get_entity_tile is const (puts it in segment RODATA instead of DATA)
  *
  */
 
-#define SCREEN_ADDR ((unsigned char*)0x300)
+//Note: 4xx instead of 3xx in others, to let some space for big global lookup tables
+#define SCREEN_ADDR ((unsigned char*)0x400)
 void dummy_function(void* a, unsigned char* b);
 
 #define SCREEN_SIZE_X 40
@@ -21,7 +23,7 @@ void dummy_function(void* a, unsigned char* b);
 #define NO_ENTITIES (NO_ENEMIES+1)
 #define PLAYER_INDEX (NO_ENEMIES)
 #define MAX_LOOKUP_VALUE 100
-#define FIRST_DIGIT_CHAR 0x10;
+#define FIRST_DIGIT_CHAR 0x10
 
 #define ENTITY_DEAD 0
 #define ENTITY_PLAYER 1
@@ -68,7 +70,7 @@ s_game_state game_state;
 
 
 // Lookup tables
-char get_entity_tile[] = {
+char const get_entity_tile[] = {
     'x', 'p', 'e'
 };
 
