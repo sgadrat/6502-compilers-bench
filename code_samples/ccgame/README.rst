@@ -33,4 +33,4 @@ Optimized for gcc
 
 6502-gcc, vbcc-native::
 
-	$ compilers/<compiler>/bench --options="<your_favorite_optims>" code_samples/ccgame/game_01_start.c code_samples/ccgame/dummy_function.c
+	$ compilers/<compiler>/bench --options="<your_favorite_optims>" code_samples/ccgame/game_modern_optims.c code_samples/ccgame/dummy_function.c

@@ -53,7 +53,7 @@ static void hero_change_weapon(Hero* hero, Weapon const* new_weapon);
 static void hero_hit_monster(Hero* hero, Monster* monster);
 
 static const Weapon fist = {1, 255};
-static const Weapon sword = {1, 255};
+static const Weapon sword = {3, 10};
 
 static void hero_init(Hero* hero) {
 	hero->pv = 10;

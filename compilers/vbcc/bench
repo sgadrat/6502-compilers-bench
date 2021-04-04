@@ -97,16 +97,15 @@ else:
 	cmd([ld65, '-o', built_prg_path, '-C', os.path.join(working_dir, 'ld65.cfg'), '--dbgfile', built_dbg_path, '--mapfile', built_map_file, 'bench.o'] + user_obj_files)
 
 # Extract code size info
-code_size = None
+code_size = 0
 with open(built_dbg_path, 'r') as dbg_file:
 	for line in dbg_file:
 		line = line.rstrip('\r\n')
-		m = re.match('seg\tid=[0-9]+,name="CODE",start=0x[0-9A-F]+,size=0x(?P<size>[0-9A-F]+),.*', line)
+		m = re.match('seg\tid=[0-9]+,name="((CODE)|(RODATA)|(DATA))",start=0x[0-9A-F]+,size=0x(?P<size>[0-9A-F]+),.*', line)
 		if m is not None:
-			assert code_size is None, 'two lines match CODE section in dbg file'
-			code_size = int(m.group('size'), 16)
+			code_size += int(m.group('size'), 16)
 
-assert code_size is not None, 'CODE section size not found in dbg file'
+assert code_size != 0, 'CODE section size not found in dbg file'
 
 # Run bench
 run_report_s = subprocess.run([emulator, built_prg_path], capture_output=True, check=True, universal_newlines=True).stdout
