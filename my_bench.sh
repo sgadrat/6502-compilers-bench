@@ -22,11 +22,13 @@ if [ "$1" == "regular" ]; then
 	export CA65_BIN=~/workspace/nes/cc65/bin/ca65
 	export LD65_BIN=~/workspace/nes/cc65/bin/ld65
 	export CC65_BIN=~/workspace/nes/cc65/bin/cc65
+	export DA65_BIN=~/workspace/nes/cc65/bin/da65
 	export CC65_LIB=~/workspace/nes/cc65/lib
 elif [ "$1" == "master" ]; then
 	export CA65_BIN=~/tmp/tmp_de_ouf/cc65/bin/ca65
 	export LD65_BIN=~/tmp/tmp_de_ouf/cc65/bin/ld65
 	export CC65_BIN=~/tmp/tmp_de_ouf/cc65/bin/cc65
+	export DA65_BIN=~/tmp/tmp_de_ouf/cc65/bin/da65
 	export CC65_LIB=~/tmp/tmp_de_ouf/cc65/lib
 else
 	echo unknown cc65 version
@@ -36,6 +38,7 @@ fi
 export VBCC=~/workspace/nes/6502_compil/c/vbcc6502/vbcc6502_linux/vbcc
 export PATH=$PATH:~/workspace/nes/6502_compil/c/vbcc6502/vbcc6502_linux/vbcc/bin
 export KICKC_BIN=~/workspace/nes/6502_compil/c/kickc/bin/kickc.sh
+export CLANG_MOS=~/workspace/nes/6502_compil/c/llvm-mos/llvm-mos/build/bin/clang
 
 shift
 compiler=$1
