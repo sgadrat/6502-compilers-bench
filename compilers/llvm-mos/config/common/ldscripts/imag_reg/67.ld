@@ -1,0 +1,3 @@
+/* GENERATED FILE -- DO NOT MANUALLY EDIT. */
+INCLUDE imag_reg/66.ld
+PROVIDE(__rc67 = __rc66 + 1);

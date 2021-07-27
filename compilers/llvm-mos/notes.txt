@@ -1,0 +1,6 @@
+
+clang-mos --config compilers/llvm-mos/config/sim.cfg compilers/llvm-mos/bench.c code_samples/memcpy/memcpy_8bit_c_style.c code_samples/memcpy/memcpy_8bit_c_style_bench.c
+
+clang-mos --config compilers/llvm-mos/config/bench.cfg compilers/llvm-mos/bench.c code_samples/memcpy/memcpy_8bit_c_style.c code_samples/memcpy/memcpy_8bit_c_style_bench.c #compilers/llvm-mos/config/bench/lib/stdlib.c
+
+da65 a.out

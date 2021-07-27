@@ -1,0 +1,3 @@
+/* GENERATED FILE -- DO NOT MANUALLY EDIT. */
+INCLUDE imag_reg/232.ld
+PROVIDE(__rc233 = __rc232 + 1);
