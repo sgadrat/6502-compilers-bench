@@ -63,14 +63,37 @@ for i in range(len(source_list)):
 			source_file.write(source_contents)
 		source_list[i] = source_path
 
-# clang-mos --config compilers/llvm-mos/config/bench.cfg compilers/llvm-mos/bench.c code_samples/memcpy/memcpy_8bit_c_style.c code_samples/memcpy/memcpy_8bit_c_style_bench.c
-
 cmd([clang, '--config', 'config/bench.cfg', '-o', built_prg_path] + compil_options + ['bench.c'] + source_list)
 
+#######################
 # Extract generated asm
+#######################
+
+#TODO we could compile independently each file with "-S" and without "-flto" (remove it from config file) to obtain their generated assembly
+#     note that we should still compile to benched result with "-flto" and disasemble it, to see the effect of LTO
+
 striped_prg = '{}.strip'.format(built_prg_path)
-subprocess.run(f'tail -c +3 "{built_prg_path}" | head -c -6 > "{striped_prg}"', check=True, shell=True) # remove two dummy bytes, and initialization vectors
-raw_asm = cmd_output([da65, striped_prg]).replace('        brk\n', '')
+
+#subprocess.run(f'head -c -6 "{built_prg_path}" > "{striped_prg}"', check=True, shell=True) # remove two dummy bytes, and initialization vectors
+#TODO actually do the above manipulation in python instead of bash, allowing to: remove trailing null bytes, retrieve code size, avoid poorly readable sheel invocation
+
+# Read generated prg-rom
+built_prg = None
+with open(built_prg_path, 'rb') as built_prg_file:
+	built_prg = built_prg_file.read();
+
+# Remove vectors and trailing zeros
+index = -7
+while built_prg[index] == 0:
+	index -= 1
+built_prg = built_prg[:index+1]
+
+# Save resulting stripped file
+with open(striped_prg, 'wb') as striped_prg_file:
+	striped_prg_file.write(built_prg)
+
+# Disasemble stripped prg
+raw_asm = cmd_output([da65, '-S', str(0x8000), striped_prg]).replace('        brk\n', '')
 generated_asm = [
 	{
 		'source': '',
@@ -79,11 +102,16 @@ generated_asm = [
 ]
 
 # Extract code size info
-code_size = 0 #TODO
+code_size = len(built_prg)
 
+###########
 # Run bench
-run_report_s = subprocess.run([emulator, built_prg_path], capture_output=True, check=True, universal_newlines=True).stdout
-run_report = json.loads(run_report_s)
+###########
+
+run_process = subprocess.run([emulator, built_prg_path], capture_output=True, check=True, universal_newlines=True)
+sys.stderr.write(run_process.stderr)
+run_report_out = run_process.stdout
+run_report = json.loads(run_report_out)
 
 # Output bench result
 print(json.dumps({

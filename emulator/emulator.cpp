@@ -3,6 +3,7 @@
 #include <iostream>
 #include <mos6502.h>
 #include <stdexcept>
+#include <sstream>
 #include <string>
 #include <strings.h>
 
@@ -57,13 +58,18 @@ int main(int argc, char** argv) {
 			}else if (addr < RAM_SIZE) {
 				return ram[addr];
 			}
-			throw std::runtime_error("invalid memory access");
+
+			std::ostringstream oss;
+			oss << "invalid memory access (addr=" << addr << " pc=" << emulator.pc << ')'; 
+			throw std::runtime_error(oss.str());
 		},
 		[&](uint16_t addr, uint8_t val) {
 			if (addr < RAM_SIZE) {
 				ram[addr] = val;
 			}else if (addr == 0x5000 && val == 0) {
 				throw StoppedByProgram("stopped by program");
+			}else {
+				std::cerr << "warning: ignored write of " << uint16_t(val) << " at " << addr << '\n';
 			}
 		}
 	);
