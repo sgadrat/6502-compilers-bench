@@ -15,7 +15,13 @@ verbose = False
 def cmd(args):
 	if verbose:
 		sys.stderr.write('cmd "{}"\n'.format(' '.join(args)))
-	subprocess.run(args, check=True)
+	subprocess.run(args, check=True, capture_output=True)
+
+def cmd_capture_stdout(args):
+	if verbose:
+		sys.stderr.write('cmd "{}"\n'.format(' '.join(args)))
+	cmd_result = subprocess.run(args, check=True, capture_output=True)
+	return cmd_result.stdout
 
 # Default params value
 default_emulator = os.path.join(os.path.abspath(os.path.dirname(sys.argv[0])), '../../emulator/emulator')
@@ -23,13 +29,12 @@ default_template_dir = os.path.abspath(os.path.dirname(sys.argv[0]))
 default_working_dir = '/tmp/c65_bench'
 
 # Params from environement
-da65 = os.getenv('DA65_BIN')
-vbcc = os.getenv('VBCC_BIN', 'vc')
-vbcc_sdk = os.getenv('VBCC')
+mosclang = os.getenv('MOSCLANG_BIN', 'mos-common-clang')
+llvmsize = os.getenv('LLVMSIZE_BIN', 'llvm-size')
 emulator = os.getenv('EMU65', default_emulator)
 
 # Params from commandline
-parser = argparse.ArgumentParser(description='Bench input code, compiled by vbcc natively')
+parser = argparse.ArgumentParser(description='Bench input code, compiled by llvm-mos')
 parser.add_argument('sources', metavar='N', type=str, nargs='+', help='Files to compile')
 parser.add_argument('--options', '-O', type=str, default='', help='Compilation options')
 parser.add_argument('--template-dir', '-t', type=str, default=default_template_dir, help='Directory containing reference files')
@@ -38,7 +43,7 @@ parser.add_argument('--verbose', '-v', action='store_true', help='print compiler
 args = parser.parse_args()
 
 source_list = [os.path.abspath(p) if p != '-' else '-' for p in args.sources]
-compil_options = args.options.split(' ') if args.options != '' else []
+compil_options = args.options.split(' ') if args.options != '' else ['']
 template_dir = os.path.abspath(args.template_dir)
 working_dir = os.path.abspath(args.working_dir)
 verbose = args.verbose
@@ -59,13 +64,18 @@ for i in range(len(source_list)):
 			source_file.write(source_contents)
 		source_list[i] = source_path
 
-cmd([vbcc, '-o', built_prg_path, '+bench_vm.cfg'] + compil_options + ['bench.c'] + source_list)
+cmd([mosclang, '-o', built_prg_path] + compil_options + ['bench.c'] + source_list)
 
 # Extract generated asm
 generated_asm = '' #TODO
 
 # Extract code size info
-code_size = 0 #TODO
+code_size = 0
+try:
+	llvmsize_output = cmd_capture_stdout([llvmsize, built_prg_path + '.elf']).decode('utf-8')
+	code_size = int(llvmsize_output.split('\n')[1].strip().split('\t')[0])
+except:
+	pass
 
 # Run bench
 run_report_s = subprocess.run([emulator, built_prg_path], capture_output=True, check=True, universal_newlines=True).stdout
