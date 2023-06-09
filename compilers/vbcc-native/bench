@@ -29,7 +29,7 @@ vbcc_sdk = os.getenv('VBCC')
 emulator = os.getenv('EMU65', default_emulator)
 
 # Params from commandline
-parser = argparse.ArgumentParser(description='Bench input code, compiled by 6502-gcc')
+parser = argparse.ArgumentParser(description='Bench input code, compiled by vbcc natively')
 parser.add_argument('sources', metavar='N', type=str, nargs='+', help='Files to compile')
 parser.add_argument('--options', '-O', type=str, default='', help='Compilation options')
 parser.add_argument('--template-dir', '-t', type=str, default=default_template_dir, help='Directory containing reference files')

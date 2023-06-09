@@ -1,6 +1,6 @@
 #include <stdint.h>
 
-static uint8_t* unzip_buffer = 0x0580;
+static uint8_t* unzip_buffer = (uint8_t*) 0x0580;
 extern const uint8_t* zipped_data;
 
 static void get_unzipped_bytes(const uint8_t* zipped, uint16_t offset, uint8_t count) {
