@@ -4,6 +4,7 @@
 #include <mos6502.h>
 #include <stdexcept>
 #include <string>
+#include <cstring>
 #include <strings.h>
 
 // g++ -Imos6502 emulator.cpp mos6502/mos6502.cpp -o emulator
@@ -46,7 +47,7 @@ int main(int argc, char** argv) {
 			std::cerr << "cannot read the program from " << program_path << '\n'; // Can happen if the file is too short
 		}
 	}
-	::bzero(ram.data(), ram.size());
+	std::memset(ram.data(), 0, ram.size());
 
 	// Run the program
 	mos6502 emulator;
